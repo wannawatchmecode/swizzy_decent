@@ -1,0 +1,44 @@
+Wanna watch me code Episode X
+Decentralized network, health check
+1. Create the project, rust
+	Done
+2. Define the network protocol
+	1. Custom network protocol
+	2. UDP
+		Done
+3. Create serialization and deserialization of packet
+	Done
+3.1 Writ tests for serialization and deserialization.
+4. health check - UDP integration
+	1. A request sent to remote host
+		PoC done
+	2. Send response if it is running, alive, and healthy
+		Poc Done
+	3. Get response, update our routing table
+		TODO
+4.1 Create message broker
+	Done
+4.2 Create consumers of message broker messages
+	1. Receive the message broker message
+		Done
+	2. Perform handling of message
+		Basically health_check file
+		Added Syn handler - Done
+
+
+Silent Coding Session 1
+Not sure what I am going to focus on today,
+1. will start with some cleanup of some of the warnings and commiting our changes
+A few other topics might be testing,
+    network table,
+    performance testing,
+    encapsulating logic in main methods into another class
+
+	
+https://stackoverflow.com/questions/1098897/what-is-the-largest-safe-udp-packet-size-on-the-internet
+508 bytes max packet size
+
+
+|HEADER|Nonce  |
+|8 bits|128 bits|
+|0x01  | 
