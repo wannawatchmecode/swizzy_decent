@@ -9,7 +9,7 @@ pub const SENDER_PORT: u16 = 3450;
 
 
 #[derive(Clone,Debug, Eq, PartialEq)]
-enum HealthStatus {
+pub enum HealthStatus {
     Healthy,
     AtRisk,
     Unhealthy,
@@ -17,30 +17,30 @@ enum HealthStatus {
 
 #[derive(Clone,Debug, Eq, PartialEq)]
 pub struct HealthStatusDetails {
-    current_status: HealthStatus,
+    pub current_status: HealthStatus,
     /**
     Decremented on each health check failure, retries stop when this hit's zero.
     */
-    lives_remaining: u8 // TBD: proper value size
+    pub lives_remaining: u8 // TBD: proper value size
 }
 
 #[derive(Clone,Debug, Eq, PartialEq)]
 pub struct HealthCheck {
-    configuration: HealthCheckConfiguration,
-    status_details: HealthStatusDetails
+    pub configuration: HealthCheckConfiguration,
+    pub status_details: HealthStatusDetails
 }
 
 #[derive(Clone,Debug, Eq, PartialEq)]
 pub struct HealthCheckConfiguration {
-    health_check_port: u16,
+    pub health_check_port: u16,
     // ttl: u32
 
 }
 
 #[derive(Clone,Debug, Eq, PartialEq)]
 pub struct NetworkDetails {
-    addr: IpAddr,
-    health_check: HealthCheck,
+    pub addr: IpAddr,
+    pub health_check: HealthCheck,
 }
 
 #[derive(Debug)]

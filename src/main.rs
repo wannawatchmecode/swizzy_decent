@@ -5,16 +5,22 @@ use std::io::BufRead;
 use std::str::FromStr;
 use std::thread::sleep;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use chrono::Local;
+use env_logger::Builder;
+use std::io::Write;
+use log::{info, LevelFilter};
 use crate::health_check::{DeserializePacket, HEALTH_CHECK_SYN_OPCODE, HealthCheckPacket, SerializePacket};
 use crate::health_check_network_broker::{build_health_check_stack, HealthCheckNetworkBroker, HealthCheckNetworkBrokerMessage};
 use crate::health_check_network_handlers::HealthCheckNetworkBrokerMessageListener;
 use crate::network::{health_check_receiver, health_check_sender, IP, NetworkDetailsStore, RECEIVER_PORT, SENDER_PORT};
+use crate::utils::generate_nonce;
 
 mod health_check;
 mod network;
 mod health_check_network_broker;
 mod health_check_network_handlers;
 mod example;
+mod utils;
 
 const IP_ADDRESS_ENV_KEY: &str = "HEALTH_CHECK_IP_ADDRESS";
 const UDP_PORT_ENV_KEY: &str = "HEALTH_CHECK_UDP_PORT";
@@ -22,6 +28,17 @@ const UDP_PORT_DEFAULT: u16 = 3450;
 const DEFAULT_IP_ADDRESS: &str = "127.0.0.1";
 
 fn main() {
+    Builder::new()
+        .format(|buf, record| {
+            writeln!(buf,
+                     "{} [{}] - {}",
+                     Local::now().format("%Y-%m-%dT%H:%M:%S"),
+                     record.level(),
+                     record.args()
+            )
+        })
+        .filter(None, LevelFilter::Debug)
+        .init();
     // main_with_stacks()
     // main_health_check_broker_example()
     // main_load_example()
@@ -54,21 +71,30 @@ fn single_instance_main() {
         stack.run();
     });
 
-    println!("Started health check server on {}:{}", ip_address_str, listener_port);
+    info!("Started health check server on {}:{}", ip_address_str, listener_port);
 
     let cli_handle = thread::spawn(move || {
         let stdin = io::stdin();
         loop {
             for line in stdin.lock().lines() {
                 println!("{}", line.unwrap());
+                let start = SystemTime::now();
+                let since_the_epoch = start
+                    .duration_since(UNIX_EPOCH)
+                    .expect("Time went backwards");
                 request_sender.send(HealthCheckNetworkBrokerMessage {
                     payload: HealthCheckPacket {
                         header: HEALTH_CHECK_SYN_OPCODE,
-                        nonce: [2,3,6,1,7,3,1,3,8,9,3,2,6,3,7,3]
+                        nonce: generate_nonce()
                     },
                     remote_addr: sender_addr,
-
                 }).unwrap();
+
+                let end = SystemTime::now();
+                let end_since_the_epoch = end
+                    .duration_since(UNIX_EPOCH)
+                    .expect("Time went backwards");
+                println!("Start: [{:?}] End: [{:?}] TotalDuration: [{:?}]", since_the_epoch, end_since_the_epoch, end_since_the_epoch-since_the_epoch);
             }
         }
     });
@@ -76,3 +102,4 @@ fn single_instance_main() {
     cli_handle.join().unwrap();
     stack_handle.join().unwrap();
 }
+

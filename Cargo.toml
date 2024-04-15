@@ -9,3 +9,6 @@ edition = "2021"
 serde = "1.0.197"
 phf = "0.11.2"
 log = "0.4.21"
+uuid = { version = "1.8.0", features = ["v4"] }
+env_logger = "0.11.3"
+chrono = "0.4.37"
