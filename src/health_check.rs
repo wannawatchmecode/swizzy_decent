@@ -36,7 +36,7 @@ impl SerializePacket for HealthCheckPacket {
     fn serialize(&self) -> Vec<u8>
     {
         let header: u8 = self.header;
-        let mut nonce: Vec<u8> = Vec::from(self.nonce);
+        let nonce: Vec<u8> = Vec::from(self.nonce);
         let mut serialized: Vec<u8> = Vec::from([header]);
         serialized.extend(nonce);
         return serialized
@@ -47,7 +47,7 @@ impl DeserializePacket for HealthCheckPacket {
     fn deserialize(raw: Vec<u8>) -> HealthCheckPacket
     {
 
-        if(raw.len() != HEALTH_CHECK_PACKET_SIZE) {
+        if raw.len() != HEALTH_CHECK_PACKET_SIZE {
             println!("Invalid raw packet attempted to deserialize for HealthCheckPacket");
             return HealthCheckPacket {
                 header: NOOP_OPCODE,

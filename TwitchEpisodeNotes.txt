@@ -26,19 +26,63 @@ Decentralized network, health check
 		Added Syn handler - Done
 
 
-Silent Coding Session 1
-Not sure what I am going to focus on today,
-1. will start with some cleanup of some of the warnings and commiting our changes
-A few other topics might be testing,
-    network table,
-    performance testing,
-    encapsulating logic in main methods into another class
-
-	
 https://stackoverflow.com/questions/1098897/what-is-the-largest-safe-udp-packet-size-on-the-internet
 508 bytes max packet size
 
 
 |HEADER|Nonce  |
 |8 bits|128 bits|
-|0x01  | 
+|0x01  |
+
+
+Silent Coding Session 1
+Not sure what I am going to focus on today,
+1. will start with some cleanup of some of the warnings and commiting our changes
+    Done... mostly
+A few other topics might be testing,
+    network table,
+    performance testing,
+2.  encapsulating logic in main methods into another class
+    Done, put logic into factory function and wrapped broker and listners in single HealthCheckStack.
+
+Break Time!
+
+Though of something, wondering how rust handles unawaited threads, From what I recall reading, once you leave scope
+most things are cleaned up. So curious how threads would be handled.
+Potential Hypothesis's
+1. If you don't join the thread will it automatically close once the scope is left?
+    This is what I am guessing happens in rust.
+        Result - This is what happened
+2. Will the thread continue to run in the background, blocking program termination
+    I think this is what happens in C? Not sure though
+        Result - Not what happens in rust
+To test we're just going to remove the joins from the test main method, and send a large amount of requests that
+will be processed async by the listener.
+
+Another break time!
+
+Let's look into how we should build the network store
+For initial, planning on using just a hashmap, but need to be considerate of concurrent access
+
+1. Going to create a repo for this and backup first
+2. Add MIT license
+3.
+
+Ok, so what I actually am going to do now is get the main method setup to run everything as a single instance instead
+of starting up two instances. This way they'll run in seperate processes and better emulate how this will run
+in the real world.
+
+Going to take a break, but we were able to a single server setup running, with a little stdin that triggers a self health
+check on new line.
+
+After break
+
+Was thinking about how to share the network table between all of our threads. I'm relatively new to channels,
+so was thinking of ways I could use that. But I think a better approach is to use the typical locking mechanisms on
+shared objects, like mutexes. What I want to do for this component is not really message based, so channels don't seem
+like the right choice.
+
+Later:
+
+We wrote the network table, and refactored some of the logic.
+
