@@ -24,6 +24,8 @@ mod health_check_network_handlers;
 mod example;
 mod utils;
 mod cli;
+mod network_models;
+mod health_check_model;
 
 const IP_ADDRESS_ENV_KEY: &str = "HEALTH_CHECK_IP_ADDRESS";
 const UDP_PORT_ENV_KEY: &str = "HEALTH_CHECK_UDP_PORT";

@@ -1,13 +1,10 @@
 use std::io::{BufRead, stdin};
-use std::io::ErrorKind::{AddrInUse, AddrNotAvailable};
 use std::net::{AddrParseError, IpAddr, SocketAddr};
 use std::str::FromStr;
 use std::sync::mpsc::Sender;
-use std::time::{SystemTime, UNIX_EPOCH};
+use log::error;
 use crate::health_check::{HEALTH_CHECK_SYN_OPCODE, HealthCheckPacket};
-use crate::health_check_network_broker::{HealthCheckNetworkBroker, HealthCheckNetworkBrokerMessage};
-use crate::HealthCheckCli;
-use crate::network::NetworkDetailsStore;
+use crate::health_check_network_broker::{HealthCheckNetworkBrokerMessage};
 use crate::utils::generate_nonce;
 
 pub struct SwizzyDecentCli {
@@ -23,15 +20,9 @@ struct CliCommand<A> {
     pub args: A
 }
 
-// struct CliCommandResult<A> {
-//
-// }
-
 struct HealthCheckCommandArgs {
     socket_addr: SocketAddr,
 }
-
-// const HEALTH_CHECK_COMMAND_SHORT_KEY: String = String::from("hc");
 
 struct HealthCheckCommand {
     name: String,
@@ -43,8 +34,6 @@ trait ExecutableCommand {
 }
 
 struct CliCommandContext {
-// <'a> {
-    // network_details_store: &'a NetworkDetailsStore,
     pub request_sender: Sender<HealthCheckNetworkBrokerMessage>
 }
 
@@ -54,14 +43,16 @@ struct HealthCheckCommandResult {
 
 impl ExecutableCommand for HealthCheckCommand {
     fn execute(&self, context: CliCommandContext) {
-        context.request_sender.send(HealthCheckNetworkBrokerMessage {
+        let res = context.request_sender.send(HealthCheckNetworkBrokerMessage {
             payload: HealthCheckPacket {
                 header: HEALTH_CHECK_SYN_OPCODE,
                 nonce: generate_nonce()
             },
             remote_addr: self.args.socket_addr,
-        }).expect("Message to be sent")
-        // return HealthCheckCommandResult { }
+        });
+        if res.is_err() {
+            error!("Error executing health check command");
+        }
     }
 }
 
@@ -70,9 +61,6 @@ impl TryFrom<String> for HealthCheckCommand {
 
     fn try_from(value: String) -> Result<Self,()> {
         let args = value.split(" ");
-        // if args[0] != HEALTH_CHECK_COMMAND_SHORT_KEY {
-        //     return Err(());
-        // }
 
         let mut is_first = true;
         let mut remote_addr:Result<IpAddr, AddrParseError> = IpAddr::from_str("asd");
@@ -106,16 +94,8 @@ impl TryFrom<String> for HealthCheckCommand {
                 socket_addr
             }
         });
-        // return String::from(value[0])
-        todo!()
     }
 }
-
-// impl From<ExecutableCommand> for HealthCheckCommand {
-//     fn from(value: CliCommand<HealthCheckCommandArgs>) -> Self {
-//         todo!()
-//     }
-// }
 
 impl Into<CliCommand<HealthCheckCommandArgs>> for HealthCheckCommand {
     fn into(self) -> CliCommand<HealthCheckCommandArgs> {
@@ -136,27 +116,27 @@ impl SwizzyDecentCli {
     pub fn run(self, configuration: SwizzyDecentCliRunConfiguration) {
         let request_sender = self.request_sender.clone();
         loop {
-            let command = get_command().unwrap();
+            let command_res = get_command();
+            if command_res.is_err() {
+                error!("Error parsing command, please try again");
+                continue;
+            }
+
+            let command = command_res.unwrap();
             let context = CliCommandContext {
                 request_sender: request_sender.clone()
             };
             command.execute(context)
         }
     }
-
-
-    // fn parse_command<A>(line: &str) -> CliCommand<A> {
-    //
-    // }
 }
 
 fn get_command() -> Result<Box<dyn ExecutableCommand>, ()> {
     // TODO: Probably should read one line at a time.
-    // let mut result: Result<Box<dyn ExecutableCommand>, ()> = Result::Err(());
     for line in stdin().lock().lines() {
         let line = line.unwrap();
         let name = get_name(line.clone());
-        return Ok(parse_command_by_name(name, line).expect("Should convert line to health check command"))
+        return parse_command_by_name(name, line)
     }
 
     return Err(())
@@ -167,9 +147,14 @@ fn get_command() -> Result<Box<dyn ExecutableCommand>, ()> {
 fn parse_command_by_name(name: String, line: String) -> Result<Box<dyn ExecutableCommand>, ()>  {
 
     match name.as_str() {
-        "hc" => return Ok(Box::new(HealthCheckCommand::try_from(line)
-            .expect("Should convert line to health check command"))),
-        _ => return Err(())
+        "hc" => {
+            let command = HealthCheckCommand::try_from(line);
+            if command.is_err() {
+                return Err(())
+            }
+            return Ok(Box::new(command.unwrap()))
+        },
+                      _ => return Err(())
     }
 }
 

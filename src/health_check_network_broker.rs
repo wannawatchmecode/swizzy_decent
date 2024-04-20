@@ -3,12 +3,12 @@ use std::net::{SocketAddr, UdpSocket};
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
-use log::info;
+use log::error;
 
 
 use crate::health_check::{DeserializePacket, HEALTH_CHECK_PACKET_SIZE, HealthCheckPacket, SerializePacket};
 use crate::health_check_network_handlers::HealthCheckNetworkBrokerMessageListener;
-use crate::network::{IP, NetworkDetailsStore, RECEIVER_PORT, SENDER_PORT};
+use crate::network::{NetworkDetailsStore};
 
 #[derive(Clone, Debug)]
 pub struct HealthCheckNetworkBrokerMessage {
@@ -47,9 +47,14 @@ impl HealthCheckNetworkBroker {
         let response_sender = self.response_sender;
         let receiver_handle = thread::spawn(move || {
             loop  {
-                let receiver_socket = receiver_socket.try_clone().expect("Cloned receiver socket");
+                let receiver_socket_res = receiver_socket.try_clone();
+                if receiver_socket_res.is_err() {
+                    error!("Error cloning socket in network broker run method");
+                    continue;
+                }
+                let receiver_socket = receiver_socket_res.unwrap();
                 let response_sender = response_sender.clone();
-                health_check_receiver(receiver_socket, response_sender).expect("Health check receiver succeeded");
+                _ = health_check_receiver(receiver_socket, response_sender);
             }
         });
 
@@ -58,15 +63,19 @@ impl HealthCheckNetworkBroker {
         let request_receiver = self.request_receiver;
         let send_handle = thread::spawn(move || {
             loop {
-                let next_request = request_receiver.recv().expect("HealthCheckNetworkBrokerMessage received from request_receiver"); // TODO: uncomment after perf testing
-                // let res = request_receiver.recv_timeout(Duration::new(1, 0));
-                // if res.clone().is_err() {
-                //     break;
-                // }
-                // let next_request = res.unwrap();
-                let sender_socket = sender_socket.try_clone().expect("Cloned");
-                    health_check_sender(sender_socket, next_request).expect("Sent HealthCheckNetworkBrokerMessage to remote addr");
-                // sleep(Duration::new(0,1));
+                let next_request_res = request_receiver.recv(); //.expect("HealthCheckNetworkBrokerMessage received from request_receiver"); // TODO: uncomment after perf testing
+                if next_request_res.is_err() {
+                    error!("Error with sender thread receiver");
+                    continue;
+                }
+                let next_request = next_request_res.unwrap();
+                let sender_socket_res = sender_socket.try_clone();
+                if sender_socket_res.is_err() {
+                    error!("Error cloning sender socket");
+                    continue;
+                }
+                let sender_socket = sender_socket_res.unwrap();
+                _ = health_check_sender(sender_socket, next_request)
             }
         });
         println!("Started threads for HealthCheckNetworkBroker");
@@ -133,14 +142,12 @@ impl HealthCheckStack {
 
     pub fn new(network_broker: HealthCheckNetworkBroker,
                health_check_network_broker_message_listener: HealthCheckNetworkBrokerMessageListener,
-               // network_details_store: NetworkDetailsStore
     ) -> HealthCheckStack {
 
         return HealthCheckStack {
             request_sender: network_broker.request_sender.clone(),
             network_broker,
             health_check_network_broker_message_listener,
-            // network_details_store
         }
     }
 
@@ -157,33 +164,6 @@ impl HealthCheckStack {
         listener_handler.join().expect("Joined listener in HealthCheckStack");
     }
 }
-
-pub struct HealthCheckFactory {
-
-}
-
-// impl HealthCheckFactory {
-//     pub fn build(receiver_addr: SocketAddr) -> HealthCheckStack {
-//         let (message_sender, message_receiver) = mpsc::channel();
-//         let (consumer_sender, consumer_receiver) = mpsc::channel();
-//
-//         // let test_message_sender = message_sender.clone();
-//         //     let _message_sender = message_sender.clone();
-//         //     let receiver_addr = SocketAddr::new(IpAddr::V4(IP), RECEIVER_PORT);
-//             let network_broker = HealthCheckNetworkBroker::new(receiver_addr, message_sender.clone(), message_receiver, consumer_sender);
-//             println!("Created message_broker_2");
-//             println!("Attempting to run message_broker_2");
-//             // message_broker_2.run();
-//             println!("message_broker_2 finished running");
-//         // let network_broker_for_listener = &network_broker;
-//         let health_check_network_broker_message_listener = HealthCheckNetworkBrokerMessageListener::new(consumer_receiver, message_sender.clone());
-//         // let network_broker = network_broker;
-//         return HealthCheckStack {
-//             network_broker,
-//             health_check_network_broker_message_listener
-//         }
-//     }
-// }
 
 pub fn build_health_check_stack(receiver_addr: SocketAddr) -> HealthCheckStack {
     let (request_sender, request_receiver) = mpsc::channel();

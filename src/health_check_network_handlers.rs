@@ -15,7 +15,9 @@ use log::{debug, info, warn};
 
 use crate::health_check::{HEALTH_CHECK_ACK_OPCODE, HEALTH_CHECK_SYN_OPCODE, NOOP_OPCODE};
 use crate::health_check_network_broker::{HealthCheckNetworkBrokerMessage};
-use crate::network::{HealthCheck, HealthCheckConfiguration, HealthCheckKey, HealthChecks, HealthStatus, HealthStatusDetails, NetworkDetails, NetworkDetailsStore};
+use crate::health_check_model::{HealthCheck, HealthCheckConfiguration, HealthCheckKey, HealthChecks, HealthStatus, HealthStatusDetails};
+use crate::network::NetworkDetailsStore;
+use crate::network_models::NetworkDetails;
 
 pub struct HealthCheckNetworkBrokerMessageListener {
     health_check_handler_map: HashMap<u8, fn(context: HealthCheckHandlerContext, params: OpcodeHandlerParams)>,
