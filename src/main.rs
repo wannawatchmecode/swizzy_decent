@@ -3,12 +3,14 @@ use std::sync::mpsc;
 use std::{env, io, thread};
 use std::io::BufRead;
 use std::str::FromStr;
-use std::thread::sleep;
+use std::thread::{sleep, Thread};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use chrono::Local;
 use env_logger::Builder;
 use std::io::Write;
 use log::{info, LevelFilter};
+use clap::Parser;
+use crate::cli::{SwizzyDecentCli, SwizzyDecentCliRunConfiguration};
 use crate::health_check::{DeserializePacket, HEALTH_CHECK_SYN_OPCODE, HealthCheckPacket, SerializePacket};
 use crate::health_check_network_broker::{build_health_check_stack, HealthCheckNetworkBroker, HealthCheckNetworkBrokerMessage};
 use crate::health_check_network_handlers::HealthCheckNetworkBrokerMessageListener;
@@ -21,6 +23,7 @@ mod health_check_network_broker;
 mod health_check_network_handlers;
 mod example;
 mod utils;
+mod cli;
 
 const IP_ADDRESS_ENV_KEY: &str = "HEALTH_CHECK_IP_ADDRESS";
 const UDP_PORT_ENV_KEY: &str = "HEALTH_CHECK_UDP_PORT";
@@ -37,7 +40,7 @@ fn main() {
                      record.args()
             )
         })
-        .filter(None, LevelFilter::Debug)
+        .filter(None, LevelFilter::Info)
         .init();
     // main_with_stacks()
     // main_health_check_broker_example()
@@ -45,6 +48,12 @@ fn main() {
     // main_with_receiver_handler()
     // main_receiver_poc()
     single_instance_main()
+}
+
+#[derive(Debug, Parser)]
+struct HealthCheckCli {
+    /// Input file to read
+    socket_addr: SocketAddr,
 }
 
 /**
@@ -65,6 +74,7 @@ fn single_instance_main() {
 
     let sender_addr = SocketAddr::new(ip, listener_port);
     let stack = build_health_check_stack(sender_addr);
+    let network_broker = &stack.network_broker;
     let request_sender = stack.request_sender.clone();
 
     let stack_handle = thread::spawn(move || {
@@ -73,33 +83,49 @@ fn single_instance_main() {
 
     info!("Started health check server on {}:{}", ip_address_str, listener_port);
 
-    let cli_handle = thread::spawn(move || {
-        let stdin = io::stdin();
-        loop {
-            for line in stdin.lock().lines() {
-                println!("{}", line.unwrap());
-                let start = SystemTime::now();
-                let since_the_epoch = start
-                    .duration_since(UNIX_EPOCH)
-                    .expect("Time went backwards");
-                request_sender.send(HealthCheckNetworkBrokerMessage {
-                    payload: HealthCheckPacket {
-                        header: HEALTH_CHECK_SYN_OPCODE,
-                        nonce: generate_nonce()
-                    },
-                    remote_addr: sender_addr,
-                }).unwrap();
+    // let cli_handle = thread::spawn(move || {
+    //     let stdin = io::stdin();
+    //
+    //     loop {
+    //         // let args = HealthCheckCli::parse();
+    //         for line in stdin.lock().lines() {
+    //             println!("{:?}", line);
+    //             // parse_command(line);
+    //             let start = SystemTime::now();
+    //             let since_the_epoch = start
+    //                 .duration_since(UNIX_EPOCH)
+    //                 .expect("Time went backwards");
+    //             request_sender.send(HealthCheckNetworkBrokerMessage {
+    //                 payload: HealthCheckPacket {
+    //                     header: HEALTH_CHECK_SYN_OPCODE,
+    //                     nonce: generate_nonce()
+    //                 },
+    //                 remote_addr: sender_addr,
+    //             }).unwrap();
+    //
+    //             let end = SystemTime::now();
+    //             let end_since_the_epoch = end
+    //                 .duration_since(UNIX_EPOCH)
+    //                 .expect("Time went backwards");
+    //             println!("Start: [{:?}] End: [{:?}] TotalDuration: [{:?}]", since_the_epoch, end_since_the_epoch, end_since_the_epoch-since_the_epoch);
+    //         }
+    //     }
+    // });
+    //
+    // cli_handle.join().unwrap();
 
-                let end = SystemTime::now();
-                let end_since_the_epoch = end
-                    .duration_since(UNIX_EPOCH)
-                    .expect("Time went backwards");
-                println!("Start: [{:?}] End: [{:?}] TotalDuration: [{:?}]", since_the_epoch, end_since_the_epoch, end_since_the_epoch-since_the_epoch);
-            }
-        }
+    // stack.network_broker
+    // let network_broker ;
+    let cli = SwizzyDecentCli::new(request_sender);
+    let cli_handle = thread::spawn(move || {
+        cli.run(SwizzyDecentCliRunConfiguration {});
     });
 
     cli_handle.join().unwrap();
     stack_handle.join().unwrap();
+}
+
+fn parse_command(line: &str) {
+
 }
 

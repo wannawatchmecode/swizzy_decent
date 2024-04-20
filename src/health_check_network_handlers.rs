@@ -15,7 +15,7 @@ use log::{debug, info, warn};
 
 use crate::health_check::{HEALTH_CHECK_ACK_OPCODE, HEALTH_CHECK_SYN_OPCODE, NOOP_OPCODE};
 use crate::health_check_network_broker::{HealthCheckNetworkBrokerMessage};
-use crate::network::{HealthCheck, HealthCheckConfiguration, HealthStatus, HealthStatusDetails, NetworkDetails, NetworkDetailsStore};
+use crate::network::{HealthCheck, HealthCheckConfiguration, HealthCheckKey, HealthChecks, HealthStatus, HealthStatusDetails, NetworkDetails, NetworkDetailsStore};
 
 pub struct HealthCheckNetworkBrokerMessageListener {
     health_check_handler_map: HashMap<u8, fn(context: HealthCheckHandlerContext, params: OpcodeHandlerParams)>,
@@ -101,11 +101,49 @@ fn health_check_ack_opcode_handler(context: HealthCheckHandlerContext, params: O
     let mut existing_record_retrieve_result = context.network_details_store.get_network_details_by_ip(&params.message.remote_addr.ip().clone());
     // I think what I actually want to do is just add or update a record in the NetworkDetailsStore, so good to have the existing record for updating
     let mut new_record;
+
+    let health_check_key = HealthCheckKey {
+        port: params.message.remote_addr.port()
+    };
+
     if !existing_record_retrieve_result.is_ok() {
         info!("record not found in network details store, will create a new one");
+        let mut health_checks = HealthChecks::new();
+
+
+        let new_health_check = HealthCheck {
+            status_details: HealthStatusDetails {
+                current_status: HealthStatus::Healthy,
+                lives_remaining: MAX_LIVES_REMAINING // TODO: Probably make configurable
+            },
+            configuration: HealthCheckConfiguration {
+                health_check_port: params.message.remote_addr.port(),
+            }
+        };
+
+        health_checks.put_health_check(health_check_key, new_health_check);
         new_record = NetworkDetails {
             addr: params.message.remote_addr.ip().clone(),
-            health_check: HealthCheck {
+            health_checks: health_checks
+        };
+        context.network_details_store.put_network_details(&new_record);
+    } else {
+        let mut old_record = existing_record_retrieve_result.unwrap();
+        let health_checks = old_record.clone().health_checks;
+        if health_checks.get_health_check(health_check_key.clone()).is_ok() {
+            let mut health_check = health_checks.get_health_check(health_check_key.clone()).unwrap();
+            let old_lives_remaining: u8 = health_check.status_details.lives_remaining;
+            if old_lives_remaining < MAX_LIVES_REMAINING {
+                health_check.status_details.lives_remaining = old_lives_remaining + 1;
+            }
+            old_record.health_checks.put_health_check(health_check_key, health_check);
+            new_record = old_record.clone();
+            // context.network_details_store.put_network_details(&old_record);
+        } else {
+            let mut health_checks = health_checks;
+
+
+            let new_health_check = HealthCheck {
                 status_details: HealthStatusDetails {
                     current_status: HealthStatus::Healthy,
                     lives_remaining: MAX_LIVES_REMAINING // TODO: Probably make configurable
@@ -113,20 +151,25 @@ fn health_check_ack_opcode_handler(context: HealthCheckHandlerContext, params: O
                 configuration: HealthCheckConfiguration {
                     health_check_port: params.message.remote_addr.port(),
                 }
-            }
-        };
-    } else {
-        new_record = existing_record_retrieve_result.unwrap();
+            };
+
+            health_checks.put_health_check(health_check_key, new_health_check);
+            new_record = NetworkDetails {
+                addr: params.message.remote_addr.ip().clone(),
+                health_checks
+            };
+        }
         // One thing I'm thinking of is how to handle the health changes, would be nice to introduce a
         // configurable policy that determines how to refresh the "lives" for the health status
         // For now I think I'll just set lives to max on a single successful health check
         // But was thinking about scenarios where you might want to "refill" lives with a different strategy
         // One option could be to add a live per successful health check, to give a SMA like value for the
         // Health status. After typing this out I will go with the incrementing policy
-        let old_lives_remaining: u8 = new_record.health_check.status_details.lives_remaining;
-        if old_lives_remaining < MAX_LIVES_REMAINING {
-            new_record.health_check.status_details.lives_remaining = old_lives_remaining + 1;
-        }
+
+        // let old_lives_remaining: u8 = new_record.health_checks.status_details.lives_remaining;
+        // if old_lives_remaining < MAX_LIVES_REMAINING {
+        //     new_record.health_check.status_details.lives_remaining = old_lives_remaining + 1;
+        // }
     }
 
     context.network_details_store.put_network_details(&new_record);

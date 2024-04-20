@@ -1,4 +1,7 @@
 use std::collections::HashSet;
+use std::net::SocketAddr;
+use crate::health_check_network_broker::HealthCheckNetworkBrokerMessage;
+use crate::utils::generate_nonce;
 
 const HEADER_SIZE_BYTES: usize = 1;
 const NONCE_SIZE_BYTES: usize = 16;
@@ -15,6 +18,21 @@ pub const HEALTH_CHECK_ACK_OPCODE: u8 = 2;
 pub struct HealthCheckPacket {
     pub header: u8,
     pub nonce: [u8; NONCE_SIZE_BYTES]
+}
+
+
+
+
+impl From<SocketAddr> for HealthCheckNetworkBrokerMessage {
+    fn from(value: SocketAddr) -> Self {
+        return HealthCheckNetworkBrokerMessage {
+            payload: HealthCheckPacket {
+                header: HEALTH_CHECK_SYN_OPCODE,
+                nonce: generate_nonce()
+            },
+            remote_addr: value,
+        }
+    }
 }
 
 pub trait SerializePacket {

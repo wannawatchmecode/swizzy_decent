@@ -101,3 +101,7 @@ Generate Nonce: Done
 I feel like I'm getting desensitized to how efficient rust is, these numbers are nuts. 14.6 us, not ms, microseconds!.
 Anyway, let's get this committed and wrap up.
 
+Goodnight everyone!
+
+Episode 4202024
+
