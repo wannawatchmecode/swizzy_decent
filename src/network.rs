@@ -54,7 +54,7 @@ mod network_tests {
 
     #[test]
     fn network_details_store_initializes_successfully() {
-        let store = NetworkDetailsStore::new();
+        let _store = NetworkDetailsStore::new();
     }
 
     #[test]
@@ -99,7 +99,7 @@ mod network_tests {
             addr: IpAddr::V4(IP),
             health_checks
         };
-        let mut store = NetworkDetailsStore::new();
+        let store = NetworkDetailsStore::new();
         store.put_network_details(&dummy_record);
         store.get_network_details_by_ip(&dummy_record.addr).unwrap();
         // store.host_map

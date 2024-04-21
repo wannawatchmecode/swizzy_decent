@@ -113,3 +113,14 @@ to prevent that type of sharing data. Just feels a little odd that global variab
 the network map stack, it's atleast the easiest. Wondering if this will pose any issues in the future.
 
 Anyway, going to take a break from streaming and finish some episodes of south park, have a good rest of your weekends!
+
+// The remaining warnings are things I know about
+// Most are related to the example which are unused, but all it takes is uncommenting one line
+// in main and they would be used.
+// Some others are for future usage potentially, like the one below with network command unused args
+// Then some constants that were used for defaults in some of my earlier testing.
+// Nothing really significant, or unknown, so all good to ignore. Would just be nice to have absolutely no
+// warnings on build ;)/<PO|\!.
+
+Saving for later...
+

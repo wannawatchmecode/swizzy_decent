@@ -1,21 +1,21 @@
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use std::sync::mpsc;
-use std::{env, io, thread};
-use std::io::BufRead;
+use std::net::{IpAddr, SocketAddr};
+
+use std::{env, thread};
+
 use std::str::FromStr;
-use std::thread::{sleep, Thread};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+
 use chrono::Local;
 use env_logger::Builder;
 use std::io::Write;
 use log::{info, LevelFilter};
 use clap::Parser;
 use crate::cli::{SwizzyDecentCli, SwizzyDecentCliRunConfiguration};
-use crate::health_check::{DeserializePacket, HEALTH_CHECK_SYN_OPCODE, HealthCheckPacket, SerializePacket};
-use crate::health_check_network_broker::{build_health_check_stack, HealthCheckNetworkBroker, HealthCheckNetworkBrokerMessage};
-use crate::health_check_network_handlers::HealthCheckNetworkBrokerMessageListener;
-use crate::network::{health_check_receiver, health_check_sender, IP, NetworkDetailsStore, RECEIVER_PORT, SENDER_PORT};
-use crate::utils::generate_nonce;
+
+use crate::health_check_network_broker::{build_health_check_stack};
+
+
+
 
 mod health_check;
 mod network;
@@ -77,7 +77,7 @@ fn single_instance_main() {
 
     let sender_addr = SocketAddr::new(ip, listener_port);
     let stack = build_health_check_stack(sender_addr);
-    let network_broker = &stack.network_broker;
+    let _network_broker = &stack.network_broker;
     let request_sender = stack.request_sender.clone();
 
     let stack_handle = thread::spawn(move || {
@@ -128,7 +128,7 @@ fn single_instance_main() {
     stack_handle.join().unwrap();
 }
 
-fn parse_command(line: &str) {
+fn parse_command(_line: &str) {
 
 }
 

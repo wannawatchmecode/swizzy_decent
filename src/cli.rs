@@ -114,7 +114,7 @@ impl SwizzyDecentCli {
             request_sender
         }
     }
-    pub fn run(self, configuration: SwizzyDecentCliRunConfiguration) {
+    pub fn run(self, _configuration: SwizzyDecentCliRunConfiguration) {
         let request_sender = self.request_sender.clone();
         loop {
             let command_res = get_command();

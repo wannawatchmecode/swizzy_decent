@@ -7,7 +7,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use crate::{DEFAULT_IP_ADDRESS, IP_ADDRESS_ENV_KEY, UDP_PORT_DEFAULT, UDP_PORT_ENV_KEY};
 use crate::health_check::{DeserializePacket, HEALTH_CHECK_SYN_OPCODE, HealthCheckPacket, SerializePacket};
 use crate::health_check_network_broker::{build_health_check_stack, HealthCheckNetworkBroker, HealthCheckNetworkBrokerMessage};
-use crate::health_check_network_handlers::HealthCheckNetworkBrokerMessageListener;
+
 use crate::network::{health_check_receiver, health_check_sender, IP, RECEIVER_PORT, SENDER_PORT};
 
 
@@ -31,7 +31,7 @@ fn main_with_stacks() {
     });
 
 
-    let message = HealthCheckNetworkBrokerMessage {
+    let _message = HealthCheckNetworkBrokerMessage {
         payload: HealthCheckPacket {
             header: 1,
             nonce: [2,3,6,1,7,3,1,3,8,9,3,2,6,3,7,3]
@@ -45,8 +45,8 @@ fn main_with_stacks() {
     let since_the_epoch = start
         .duration_since(UNIX_EPOCH)
         .expect("Time went backwards");
-    let CALLS = 10;
-    for _i in 0..CALLS {
+    let calls = 10;
+    for _i in 0..calls {
         let message = HealthCheckNetworkBrokerMessage {
             payload: HealthCheckPacket {
                 header: 1,
@@ -70,8 +70,8 @@ fn main_with_stacks() {
     thread::sleep(Duration::from_secs(3));
     println!("Start: [{:?}] End: [{:?}] TotalDuration: [{:?}]", since_the_epoch, end_since_the_epoch, end_since_the_epoch-since_the_epoch);
 
-    first_handle.join();
-    second_handle.join();
+    let _ = first_handle.join();
+    let _ = second_handle.join();
 }
 
 /**
@@ -297,11 +297,11 @@ fn main_health_check_broker_example() {
 fn main_receiver_poc() {
 
     let receiver_handle = thread::spawn(|| {
-        health_check_receiver();
+        let _ = health_check_receiver();
     });
 
     let send_handle = thread::spawn(|| {
-        health_check_sender();
+        let _ = health_check_sender();
     });
 
     send_handle.join().unwrap();

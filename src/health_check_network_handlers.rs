@@ -88,7 +88,7 @@ pub struct OpcodeHandlerParams {
     sender: Sender<HealthCheckNetworkBrokerMessage>
 }
 
-fn health_check_syn_opcode_handler(context: HealthCheckHandlerContext, params: OpcodeHandlerParams) {
+fn health_check_syn_opcode_handler(_context: HealthCheckHandlerContext, params: OpcodeHandlerParams) {
     let mut response_object = params.message.clone();
     response_object.payload.header = HEALTH_CHECK_ACK_OPCODE;
     params.sender.send(response_object)
@@ -101,9 +101,9 @@ fn health_check_ack_opcode_handler(context: HealthCheckHandlerContext, params: O
     info!("Ack received from {}", params.message.remote_addr);
     debug!("Params: {:?}", params);
     // Not sure this is necessary at this point, mainly if we would want to check if a record already exists or not
-    let mut existing_record_retrieve_result = context.network_details_store.get_network_details_by_ip(&params.message.remote_addr.ip().clone());
+    let existing_record_retrieve_result = context.network_details_store.get_network_details_by_ip(&params.message.remote_addr.ip().clone());
     // I think what I actually want to do is just add or update a record in the NetworkDetailsStore, so good to have the existing record for updating
-    let mut new_record;
+    let new_record;
 
     let health_check_key = HealthCheckKey {
         port: params.message.remote_addr.port()
@@ -127,7 +127,7 @@ fn health_check_ack_opcode_handler(context: HealthCheckHandlerContext, params: O
         health_checks.put_health_check(health_check_key, new_health_check);
         new_record = NetworkDetails {
             addr: params.message.remote_addr.ip().clone(),
-            health_checks: health_checks
+            health_checks
         };
         context.network_details_store.put_network_details(&new_record);
     } else {
@@ -179,7 +179,7 @@ fn health_check_ack_opcode_handler(context: HealthCheckHandlerContext, params: O
     info!("Updated network details {:?}", context.network_details_store);
 }
 
-fn health_check_noop_opcode_handler(context: HealthCheckHandlerContext, params: OpcodeHandlerParams) {
+fn health_check_noop_opcode_handler(_context: HealthCheckHandlerContext, _params: OpcodeHandlerParams) {
     warn!("TODO: implement health_check_noop_opcode_handler");
 }
 
@@ -189,7 +189,7 @@ struct HealthCheckHandlerContext<'a> {
 
 // health_check_handler_map: HashMap<u8, fn(context: &HealthCheckHandlerContext, params: OpcodeHandlerParams)>,
 
-pub fn get_health_check_handler_map() -> HashMap<u8, fn(context: HealthCheckHandlerContext, params: OpcodeHandlerParams)> {
+fn get_health_check_handler_map() -> HashMap<u8, fn(context: HealthCheckHandlerContext, params: OpcodeHandlerParams)> {
     let mut map: HashMap<u8, fn(context: HealthCheckHandlerContext, params: OpcodeHandlerParams)> = HashMap::new();
     map.insert(NOOP_OPCODE, health_check_noop_opcode_handler);
     map.insert(HEALTH_CHECK_SYN_OPCODE, health_check_syn_opcode_handler);
