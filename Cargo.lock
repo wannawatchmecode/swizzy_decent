@@ -380,6 +380,7 @@ dependencies = [
  "clap",
  "env_logger",
  "log",
+ "once_cell",
  "phf",
  "serde",
  "uuid",

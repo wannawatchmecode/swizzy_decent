@@ -1,14 +1,17 @@
 use std::collections::HashMap;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, UdpSocket};
 use std::sync::Mutex;
+use once_cell::sync::Lazy;
 use crate::health_check::{DeserializePacket, get_health_check_opcodes, HEALTH_CHECK_ACK_OPCODE, HEALTH_CHECK_PACKET_SIZE, HEALTH_CHECK_SYN_OPCODE, HealthCheckPacket, SerializePacket};
 use crate::network_models::NetworkDetails;
 
 pub const IP: Ipv4Addr = Ipv4Addr::new(127,0,0,1);
 pub const RECEIVER_PORT: u16 = 3451;
 pub const SENDER_PORT: u16 = 3450;
-
-
+pub static NETWORK_DETAILS_STORE: Lazy<NetworkDetailsStore> = Lazy::new( || NetworkDetailsStore::new());
+// Lazy::new(||
+//
+// )
 #[derive(Debug)]
 pub struct NetworkDetailsStore {
     // add id?
@@ -47,7 +50,7 @@ impl NetworkDetailsStore {
 mod network_tests {
     use std::net::IpAddr;
     use crate::health_check_model::{HealthCheck, HealthCheckConfiguration, HealthCheckKey, HealthChecks, HealthStatus, HealthStatusDetails};
-    use crate::network::{HealthCheck, HealthCheckConfiguration, HealthCheckKey, HealthChecks, HealthStatus, HealthStatusDetails, IP, NetworkDetails, NetworkDetailsStore};
+    use crate::network::{IP, NetworkDetails, NetworkDetailsStore};
 
     #[test]
     fn network_details_store_initializes_successfully() {

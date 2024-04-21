@@ -5,6 +5,7 @@ use std::sync::mpsc::Sender;
 use log::error;
 use crate::health_check::{HEALTH_CHECK_SYN_OPCODE, HealthCheckPacket};
 use crate::health_check_network_broker::{HealthCheckNetworkBrokerMessage};
+use crate::print_network_command::PrintNetworkCommand;
 use crate::utils::generate_nonce;
 
 pub struct SwizzyDecentCli {
@@ -29,12 +30,12 @@ struct HealthCheckCommand {
     args: HealthCheckCommandArgs
 }
 
-trait ExecutableCommand {
+pub(crate) trait ExecutableCommand {
     fn execute(&self, context: CliCommandContext);
 }
 
-struct CliCommandContext {
-    pub request_sender: Sender<HealthCheckNetworkBrokerMessage>
+pub(crate) struct CliCommandContext {
+    pub request_sender: Sender<HealthCheckNetworkBrokerMessage>,
 }
 
 struct HealthCheckCommandResult {
@@ -152,7 +153,14 @@ fn parse_command_by_name(name: String, line: String) -> Result<Box<dyn Executabl
             if command.is_err() {
                 return Err(())
             }
-            return Ok(Box::new(command.unwrap()))
+            return Ok(Box::new(command.unwrap()));
+        },
+        "pn" => {
+            let command = PrintNetworkCommand::try_from(line);
+            if command.is_err() {
+                return Err(())
+            }
+            return Ok(Box::new(command.unwrap()));
         },
                       _ => return Err(())
     }

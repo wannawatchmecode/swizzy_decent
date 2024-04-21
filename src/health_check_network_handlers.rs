@@ -16,7 +16,7 @@ use log::{debug, info, warn};
 use crate::health_check::{HEALTH_CHECK_ACK_OPCODE, HEALTH_CHECK_SYN_OPCODE, NOOP_OPCODE};
 use crate::health_check_network_broker::{HealthCheckNetworkBrokerMessage};
 use crate::health_check_model::{HealthCheck, HealthCheckConfiguration, HealthCheckKey, HealthChecks, HealthStatus, HealthStatusDetails};
-use crate::network::NetworkDetailsStore;
+use crate::network::{NETWORK_DETAILS_STORE, NetworkDetailsStore};
 use crate::network_models::NetworkDetails;
 
 pub struct HealthCheckNetworkBrokerMessageListener {
@@ -61,7 +61,8 @@ impl HealthCheckNetworkBrokerMessageListener {
                 sender: self.network_broker_sender.clone()
             };
             let context = HealthCheckHandlerContext {
-                network_details_store: &self.network_details_store
+                // network_details_store: &self.network_details_store
+                network_details_store: &NETWORK_DETAILS_STORE
             };
 
             handler_fn(context, handler_props);

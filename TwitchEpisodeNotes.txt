@@ -105,3 +105,11 @@ Goodnight everyone!
 
 Episode 4202024
 
+421
+
+So just finished setting up the print network command. Had to do it differently than I would have in other languages.
+Wanted to use more dependency injection, but the borrow checker and ownership controls I think are actually intended
+to prevent that type of sharing data. Just feels a little odd that global variables seem to be the proper way of sharing
+the network map stack, it's atleast the easiest. Wondering if this will pose any issues in the future.
+
+Anyway, going to take a break from streaming and finish some episodes of south park, have a good rest of your weekends!
