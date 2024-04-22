@@ -1,20 +1,23 @@
 use std::net::{IpAddr, SocketAddr};
-
 use std::{env, thread};
-
 use std::str::FromStr;
-
-
 use chrono::Local;
 use env_logger::Builder;
 use std::io::Write;
 use log::{info, LevelFilter};
 use clap::Parser;
 use crate::cli::{SwizzyDecentCli, SwizzyDecentCliRunConfiguration};
-
 use crate::health_check_network_broker::{build_health_check_stack};
+use std::convert::Infallible;
 
-
+use http_body_util::Full;
+use hyper::body::Bytes;
+use hyper::server::conn::http1;
+use hyper::service::service_fn;
+use hyper::{Request, Response};
+use hyper_util::rt::TokioIo;
+use tokio::net::TcpListener;
+use crate::network_table_api::api_main;
 
 
 mod health_check;
@@ -27,6 +30,7 @@ mod cli;
 mod network_models;
 mod health_check_model;
 mod print_network_command;
+mod network_table_api;
 
 const IP_ADDRESS_ENV_KEY: &str = "HEALTH_CHECK_IP_ADDRESS";
 const UDP_PORT_ENV_KEY: &str = "HEALTH_CHECK_UDP_PORT";
@@ -45,6 +49,7 @@ fn main() {
         })
         .filter(None, LevelFilter::Info)
         .init();
+
     // main_with_stacks()
     // main_health_check_broker_example()
     // main_load_example()
@@ -76,6 +81,7 @@ fn single_instance_main() {
     let ip = IpAddr::from_str(&ip_address_str.as_str()).expect("Valid IP address");
 
     let sender_addr = SocketAddr::new(ip, listener_port);
+    let socket_addr = sender_addr.clone();
     let stack = build_health_check_stack(sender_addr);
     let _network_broker = &stack.network_broker;
     let request_sender = stack.request_sender.clone();
@@ -123,9 +129,12 @@ fn single_instance_main() {
     let cli_handle = thread::spawn(move || {
         cli.run(SwizzyDecentCliRunConfiguration {});
     });
+    let api_main_thread = thread::spawn(move || api_main(socket_addr));
 
-    cli_handle.join().unwrap();
-    stack_handle.join().unwrap();
+    _ = cli_handle.join().unwrap();
+    _ = api_main_thread.join().unwrap();
+    _ = stack_handle.join().unwrap();
+
 }
 
 fn parse_command(_line: &str) {

@@ -124,3 +124,35 @@ Anyway, going to take a break from streaming and finish some episodes of south p
 
 Saving for later...
 
+Episode 4/21 pt 2 Http hosting
+we'll try hyper, like that it's at v1.0 atleast, we'll see how it is. Only have experience with acix
+
+Oh also, to explain why we are creating a new http server in the first place...
+I think I explained this yesterday, but potentially while I was unintentionally muted
+but, I want to be able to transfer entire network tables between nodes. This is how our network discovery will work.
+
+Once a remote server discovers you, it would be able to request you to provide your network table of hosts you know about.
+From there they will perform a health check on each of the hosts you provided in the map and if they are healthy will be
+added to their network table, thus expanding their context of the entire network through peer network table sharing.
+
+Let me add this to the readme, and rename this episode. BRB...
+
+Welcome to WannaWacthMeCode!!!! Today we will be updating this readme
+with an overview of what I see for this project, and where it came from.
+
+Episode - Network map api's
+Today we will be creating the api's for sharing network tables between hosts.
+These will be http based so we don't have to worry about the data integrity
+like we would with udp.
+
+Let's get started!
+...
+
+So got the http server running now, prints the network stack but does it with the debug, so not real json format
+
+Had some issues with the serde serialization on the hashmap though. Taking a break...
+
+let's fix the serialization...
+
+
+

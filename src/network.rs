@@ -43,6 +43,12 @@ impl NetworkDetailsStore {
         let mut host_map = self.host_map.lock().unwrap();
         host_map.insert(network_details.clone().addr, network_details.clone());
     }
+
+    pub fn clone_host_map(&self) -> HashMap<IpAddr, NetworkDetails> {
+        let host_map_mutex = self.host_map.lock().unwrap();
+        let return_map = host_map_mutex.clone();
+        return return_map
+    }
 }
 
 // Let's write some tests
